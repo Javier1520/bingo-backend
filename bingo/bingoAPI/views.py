@@ -1,5 +1,4 @@
-# bingo/views.py
-import time
+from django.db import IntegrityError
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -13,24 +12,30 @@ class RegisterToGameView(APIView):
 
     def post(self, request):
         user = request.user
-        game, created = Game.objects.get_or_create(is_active=False)
+        game, created = Game.objects.get_or_create(is_active=False, winner=None)
 
         if game.players.count() >= 10:
             return Response({"error": "Game is full"}, status=status.HTTP_400_BAD_REQUEST)
 
-        if Player.objects.filter(user=user).exists():
-            return Response({"error": "User is already registered for a game"}, status=status.HTTP_400_BAD_REQUEST)
+        if Player.objects.filter(user=user, game__is_active=True).exists():
+            return Response({"error": "User is already registered for an active game"}, status=status.HTTP_400_BAD_REQUEST)
+
 
         card = BingoCard()
         card.generate_unique_card()
 
-        player = Player.objects.create(user=user, bingo_card=card, game=game)
-        game.players.add(user)
+        try:
+            player = Player.objects.create(user=user, bingo_card=card, game=game)
+            game.players.add(user)
 
-        if game.can_start() and not game.is_active:
-            threading.Thread(target=game.start_countdown).start()
+            if game.can_start() and not game.is_active:
+                threading.Thread(target=game.start_countdown).start()
 
-        return Response({"player": player.user.username, "card": player.bingo_card.numbers}, status=status.HTTP_201_CREATED)
+            return Response({"player": player.user.username, "card": player.bingo_card.numbers}, status=status.HTTP_201_CREATED)
+        except IntegrityError:
+            return Response(
+                {"error": "User is already registered with a bingo card for this game"},
+                status=status.HTTP_400_BAD_REQUEST)
 
 
 class LatestBallView(APIView):
@@ -58,13 +63,23 @@ class ClaimWinView(APIView):
         if not player:
             return Response({"error": "Player not registered in the game"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Validate the player's bingo card
         if game.validate_bingo_card(player):
             game.winner = user
             game.is_active = False
             game.save()
             return Response({"message": f"{user.username} wins the game!"}, status=status.HTTP_200_OK)
         else:
-            # Disqualify the player
             player.delete()
             return Response({"error": "Invalid claim, you are disqualified"}, status=status.HTTP_403_FORBIDDEN)
+
+class GetBingoCardView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        player = Player.objects.filter(user=user).last()
+
+        if not player:
+            return Response({"error": "User is not part of an active game"}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response({"card": player.bingo_card.numbers}, status=status.HTTP_200_OK)
