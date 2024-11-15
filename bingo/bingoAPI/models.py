@@ -1,8 +1,6 @@
-# bingo/models.py
 from django.contrib.auth.models import User
 from django.db import models
 import random
-import threading
 import time
 from django.utils import timezone
 
@@ -27,6 +25,7 @@ class Game(models.Model):
 
     def start_countdown(self):
         time.sleep(30)
+
         if not self.is_active and self.players.count() >= 3:
             self.is_active = True
             self.start_time = timezone.now()
@@ -34,17 +33,19 @@ class Game(models.Model):
             self.start_ball_drawing()
 
     def start_ball_drawing(self):
-        while self.is_active and len(self.drawn_balls) < 75:
+        while self.is_active:
             time.sleep(5)
+            self.refresh_from_db()
             new_ball = self.draw_ball()
+            print(new_ball)
             if not new_ball:
                 self.is_active = False
                 self.save()
                 break
 
     def validate_bingo_card(self, player):
-        card_numbers = [num for column in player.bingo_card.numbers.values() if column for num in column if num]
-        return all(num in self.drawn_balls for num in card_numbers)
+        return player.bingo_card.is_winner(self.drawn_balls)
+
 
 class BingoCard(models.Model):
     numbers = models.JSONField(unique=True)
@@ -64,7 +65,58 @@ class BingoCard(models.Model):
                 self.save()
                 break
 
+    def is_winner(self, drawn_balls):
+        numbers = self.numbers
+        drawn_balls = set(drawn_balls)
+        columns = ['B', 'I', 'N', 'G', 'O']
+
+        rows = [set() for _ in range(5)]
+        cols = [set() for _ in range(5)]
+        diagonals = [set(), set()]
+        corners = set()
+        marked_count = 0
+        total_cells = 0
+
+        for i, col in enumerate(columns):
+            for j, num in enumerate(numbers[col]):
+                total_cells += 1
+
+                # Skip free space
+                if num is None:
+                    marked_count += 1
+                    rows[j].add('FREE')
+                    cols[i].add('FREE')
+                    if i == j:
+                        diagonals[0].add('FREE')
+                    if i + j == 4:
+                        diagonals[1].add('FREE')
+                    continue
+
+                if num in drawn_balls:
+                    marked_count += 1
+                    rows[j].add(num)
+                    cols[i].add(num)
+
+                    if i == j:
+                        diagonals[0].add(num)
+                    if i + j == 4:
+                        diagonals[1].add(num)
+
+                    if (i in {0, 4}) and (j in {0, 4}):
+                        corners.add(num)
+
+        return any([
+            any(len(row) == 5 for row in rows),        # Complete row
+            any(len(col) == 5 for col in cols),        # Complete column
+            any(len(diag) == 5 for diag in diagonals), # Complete diagonal
+            len(corners) == 4,                         # Four corners
+            marked_count == total_cells                # Full card
+        ])
+
 class Player(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     bingo_card = models.OneToOneField(BingoCard, on_delete=models.CASCADE)
     game = models.ForeignKey(Game, on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ['user', 'game']
