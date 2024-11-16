@@ -21,16 +21,15 @@ class Game(models.Model):
         return None
 
     def can_start(self):
-        return self.players.count() >= 3
+        return self.players.count() >= 2
 
     def start_countdown(self):
         time.sleep(30)
 
-        if not self.is_active and self.players.count() >= 3:
-            self.is_active = True
-            self.start_time = timezone.now()
-            self.save()
-            self.start_ball_drawing()
+        self.is_active = True
+        self.start_time = timezone.now()
+        self.save()
+        self.start_ball_drawing()
 
     def start_ball_drawing(self):
         while self.is_active:

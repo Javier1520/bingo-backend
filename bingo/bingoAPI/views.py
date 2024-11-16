@@ -28,6 +28,9 @@ class RegisterToGameView(APIView):
             player = Player.objects.create(user=user, bingo_card=card, game=game)
             game.players.add(user)
 
+            if game.players.count() == 1:
+                threading.Thread(target=self.check_timeout, args=(game,)).start()
+
             if game.can_start() and not game.is_active:
                 threading.Thread(target=game.start_countdown).start()
 
@@ -36,6 +39,19 @@ class RegisterToGameView(APIView):
             return Response(
                 {"error": "User is already registered with a bingo card for this game"},
                 status=status.HTTP_400_BAD_REQUEST)
+
+    def check_timeout(self, game):
+        """Deletes the game if it doesn't reach 2 players within 60 seconds."""
+        import time
+
+        time.sleep(60)
+        if game.players.count() < 2 and not game.is_active:
+            # Notify the single player (if any)
+            player = Player.objects.filter(game=game).first()
+            if player:
+                print(f"Notifying user {player.user.username}: Game canceled due to insufficient players.")
+
+            game.delete()
 
 
 class LatestBallView(APIView):
