@@ -25,11 +25,13 @@ class Game(models.Model):
 
     def start_countdown(self):
         time.sleep(30)
+        self.refresh_from_db()
+        if not self.is_active:
 
-        self.is_active = True
-        self.start_time = timezone.now()
-        self.save()
-        self.start_ball_drawing()
+            self.is_active = True
+            self.start_time = timezone.now()
+            self.save()
+            self.start_ball_drawing()
 
     def start_ball_drawing(self):
         while self.is_active:
@@ -44,6 +46,18 @@ class Game(models.Model):
 
     def validate_bingo_card(self, player):
         return player.bingo_card.is_winner(self.drawn_balls)
+
+    def get_bingo_letter(self, number):
+        if 1 <= number <= 15:
+            return 'B'
+        elif 16 <= number <= 30:
+            return 'I'
+        elif 31 <= number <= 45:
+            return 'N'
+        elif 46 <= number <= 60:
+            return 'G'
+        elif 61 <= number <= 75:
+            return 'O'
 
 
 class BingoCard(models.Model):
