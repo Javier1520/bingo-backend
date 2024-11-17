@@ -62,6 +62,12 @@ class LatestBallView(APIView):
         if not game or not game.drawn_balls:
             return Response({"message": "No balls drawn yet"}, status=status.HTTP_200_OK)
 
+        if game.winner:
+            return Response({
+                "message": "Game finished",
+                "winner": game.winner.username
+            }, status=status.HTTP_200_OK)
+
         last_ball = game.drawn_balls[-1]
         letter = game.get_bingo_letter(int(last_ball))
         formatted_ball = f"{letter}{last_ball}"
@@ -90,6 +96,9 @@ class ClaimWinView(APIView):
             return Response({"message": f"{user.username} wins the game!"}, status=status.HTTP_200_OK)
         else:
             player.delete()
+            if game.players.count() == 0:
+                game.is_active = False
+                game.delete()
             return Response({"error": "Invalid claim, you are disqualified"}, status=status.HTTP_403_FORBIDDEN)
 
 class GetBingoCardView(APIView):
