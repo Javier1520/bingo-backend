@@ -24,10 +24,10 @@ load_dotenv()
 
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv('SECRET_KEY')
+SECRET_KEY = os.getenv('SECRET_KEY', default='f(l@_(j*!!&#^s((&q!a3h-3rkyc_ys09dx(%$#ix7g-uit&c)')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DEBUG') == 'True'
+DEBUG = os.environ.get('DEBUG', default='True') == 'True'
 
 ALLOWED_HOSTS = []
 
@@ -87,9 +87,9 @@ WSGI_APPLICATION = 'bingo.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('DB_NAME'),
-        'USER': os.getenv('DB_USER'),
-        'PASSWORD': os.getenv('DB_PASSWORD'),
+        'NAME': os.getenv('DB_NAME', default='my-bingo-db'),
+        'USER': os.getenv('DB_USER', default='my-user-bingo-db'),
+        'PASSWORD': os.getenv('DB_PASSWORD', default='my-password'),
         'HOST': 'localhost',
         'PORT': '5432',
     }

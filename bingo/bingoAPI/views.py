@@ -110,5 +110,5 @@ class GetBingoCardView(APIView):
 
         if not player:
             return Response({"error": "User is not part of an active game"}, status=status.HTTP_400_BAD_REQUEST)
-
-        return Response({"card": player.bingo_card.numbers}, status=status.HTTP_200_OK)
+        card = {key: player.bingo_card.numbers[key] for key in ['B', 'I', 'N', 'G', 'O']}
+        return Response({"card": card}, status=status.HTTP_200_OK)
