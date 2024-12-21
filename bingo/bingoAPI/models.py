@@ -40,8 +40,7 @@ class Game(models.Model):
             new_ball = self.draw_ball()
             print(new_ball)
             if not new_ball:
-                self.is_active = False
-                self.save()
+                self.delete()
                 break
 
     def validate_bingo_card(self, player):
@@ -61,7 +60,7 @@ class Game(models.Model):
 
 
 class BingoCard(models.Model):
-    numbers = models.JSONField(unique=True)
+    numbers = models.JSONField()
 
     def generate_unique_card(self):
         while True:
