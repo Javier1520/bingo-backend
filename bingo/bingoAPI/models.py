@@ -46,7 +46,12 @@ class Game(models.Model):
         """Continuously draw balls and notify the WebSocket group."""
         while self.is_active:
             time.sleep(5)
-            self.refresh_from_db()
+            try:
+                self.refresh_from_db()
+            except self.DoesNotExist:
+                print("Game record no longer exists. Stopping ball drawing.")
+                asyncio.run(GameConsumer.disconnect_all())
+                break
             new_ball = self.draw_ball()
 
             if new_ball:
@@ -61,6 +66,7 @@ class Game(models.Model):
                 }))
             else:
                 print("No new ball. Ending game.")
+                asyncio.run(GameConsumer.disconnect_all())
                 self.delete()
                 break
 

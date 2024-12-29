@@ -1,10 +1,11 @@
+import asyncio
 from django.db import IntegrityError
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from django.contrib.auth.models import User
 from .models import BingoCard, Player, Game
+from .consumers import GameConsumer
 import threading
 
 class RegisterToGameView(APIView):
@@ -72,11 +73,17 @@ class ClaimWinView(APIView):
             game.winner = user
             game.is_active = False
             game.save()
+            asyncio.run(GameConsumer.send_to_all({
+                    'type': 'game.finish',
+                    'message': {'state': 'finished'}
+                }))
+            asyncio.run(GameConsumer.disconnect_all())
             return Response({"message": f"{user.username} wins the game!"}, status=status.HTTP_200_OK)
         else:
             player.delete()
             if game.players.count() == 0:
                 game.is_active = False
+                asyncio.run(GameConsumer.disconnect_all())
                 game.delete()
             return Response({"error": "Invalid claim, you are disqualified"}, status=status.HTTP_403_FORBIDDEN)
 

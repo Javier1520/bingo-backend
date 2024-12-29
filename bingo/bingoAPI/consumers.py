@@ -33,10 +33,6 @@ class GameConsumer(AsyncWebsocketConsumer):
             # Accept the WebSocket connection
             await self.accept()
             print("\n\nWebSocket connection accepted\n\n")
-            await self.send(text_data=json.dumps({
-                'type': 'game.ball',
-                'message': {'ball': 'B2'}
-            }))
 
         except Exception as e:
             print(f"\n\nException during connect: {e}\n\n")
@@ -46,6 +42,19 @@ class GameConsumer(AsyncWebsocketConsumer):
         # Remove the client from the set of connected clients
         self.connected_clients.discard(self)
         print(f"\n\nWebSocket disconnected with close code: {close_code}\n\n")
+
+    @classmethod
+    async def disconnect_all(cls):
+        """
+        Disconnect all currently connected WebSocket clients.
+        """
+        print(f"\n\nDisconnecting all {len(cls.connected_clients)} clients.\n\n")
+        for client in list(cls.connected_clients):  # Create a list copy to avoid modification during iteration
+            try:
+                await client.close()
+            except Exception as e:
+                print(f"Error disconnecting client: {e}")
+        cls.connected_clients.clear()
 
     @classmethod
     async def send_to_all(cls, message):
