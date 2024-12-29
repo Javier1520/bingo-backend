@@ -53,10 +53,10 @@ The API uses **token-based authentication**. Users must first register and log i
 ### Authentication
 
 #### Register a User
-**URL:** `POST /api/auth/users/`  
-**Description:** Registers a new user.  
+**URL:** `POST /api/auth/users/`
+**Description:** Registers a new user.
 
-**Request Body:**  
+**Request Body:**
 ```json
 {
   "username": "example_user",
@@ -64,7 +64,7 @@ The API uses **token-based authentication**. Users must first register and log i
 }
 ```
 
-**Response:**  
+**Response:**
 ```json
 {
   "id": 1,
@@ -78,10 +78,10 @@ The API uses **token-based authentication**. Users must first register and log i
 ---
 
 #### Login
-**URL:** `POST /api/auth/token/login/`  
-**Description:** Logs in a user and returns a token.  
+**URL:** `POST /api/auth/token/login/`
+**Description:** Logs in a user and returns a token.
 
-**Request Body:**  
+**Request Body:**
 ```json
 {
   "username": "example_user",
@@ -89,7 +89,7 @@ The API uses **token-based authentication**. Users must first register and log i
 }
 ```
 
-**Response:**  
+**Response:**
 ```json
 {
   "auth_token": "your_token_here"
@@ -101,15 +101,15 @@ The API uses **token-based authentication**. Users must first register and log i
 ### Game Endpoints
 
 #### Register to a Game
-**URL:** `POST /api/register-to-game`  
-**Description:** Registers the authenticated user to a new or ongoing inactive game.  
+**URL:** `POST /api/register-to-game`
+**Description:** Registers the authenticated user to a new or ongoing inactive game.
 
-**Request Headers:**  
+**Request Headers:**
 ```http
 Authorization: Token <your_token>
 ```
 
-**Response (Success):**  
+**Response (Success):**
 ```json
 {
   "player": "example_user",
@@ -123,14 +123,14 @@ Authorization: Token <your_token>
 }
 ```
 
-**Response (Error - Game Full):**  
+**Response (Error - Game Full):**
 ```json
 {
   "error": "Game is full"
 }
 ```
 
-**Response (Error - Already Registered):**  
+**Response (Error - Already Registered):**
 ```json
 {
   "error": "User is already registered for an active game"
@@ -140,22 +140,22 @@ Authorization: Token <your_token>
 ---
 
 #### Get Latest Ball
-**URL:** `GET /api/latest-ball`  
-**Description:** Retrieves the most recently drawn bingo ball for the current game.  
+**URL:** `GET /api/latest-ball`
+**Description:** Retrieves the most recently drawn bingo ball for the current game.
 
-**Request Headers:**  
+**Request Headers:**
 ```http
 Authorization: Token <your_token>
 ```
 
-**Response (Success):**  
+**Response (Success):**
 ```json
 {
   "latest_ball": 42
 }
 ```
 
-**Response (Error):**  
+**Response (Error):**
 ```json
 {
   "message": "No balls drawn yet"
@@ -165,29 +165,29 @@ Authorization: Token <your_token>
 ---
 
 #### Claim a Win
-**URL:** `POST /api/claim-win`  
-**Description:** Allows the authenticated user to claim a win. Validates the user’s bingo card against drawn balls.  
+**URL:** `POST /api/claim-win`
+**Description:** Allows the authenticated user to claim a win. Validates the user’s bingo card against drawn balls.
 
-**Request Headers:**  
+**Request Headers:**
 ```http
 Authorization: Token <your_token>
 ```
 
-**Response (Success):**  
+**Response (Success):**
 ```json
 {
   "message": "example_user wins the game!"
 }
 ```
 
-**Response (Error - Invalid Card):**  
+**Response (Error - Invalid Card):**
 ```json
 {
   "error": "Invalid claim, you are disqualified"
 }
 ```
 
-**Response (Error - No Active Game):**  
+**Response (Error - No Active Game):**
 ```json
 {
   "error": "No active game"
@@ -197,15 +197,15 @@ Authorization: Token <your_token>
 ---
 
 #### Get Bingo Card
-**URL:** `GET /api/bingo-card`  
-**Description:** Retrieves the authenticated user’s bingo card for the current active game.  
+**URL:** `GET /api/bingo-card`
+**Description:** Retrieves the authenticated user’s bingo card for the current active game.
 
-**Request Headers:**  
+**Request Headers:**
 ```http
 Authorization: Token <your_token>
 ```
 
-**Response (Success):**  
+**Response (Success):**
 ```json
 {
   "card": {
@@ -218,12 +218,43 @@ Authorization: Token <your_token>
 }
 ```
 
-**Response (Error):**  
+**Response (Error):**
 ```json
 {
   "error": "User is not part of an active game"
 }
 ```
+
+---
+
+### WebSocket Endpoints
+
+#### Connect to Game
+**URL:** `ws://<your_domain>/ws/game/<game_id>/`
+**Description:** Connects to the WebSocket for real-time updates on the game.
+
+**Messages:**
+
+- **New Ball Drawn:**
+  ```json
+  {
+    "action": "new_ball",
+    "message": {
+      "ball": 42,
+      "letter": "N"
+    }
+  }
+  ```
+
+- **Claim Win:**
+  **Request:**
+  ```json
+  {
+    "action": "claim_win",
+    "player_id": 1
+  }
+  ```
+
 
 ---
 

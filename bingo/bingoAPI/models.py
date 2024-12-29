@@ -1,8 +1,14 @@
+import asyncio
+import time
 from django.contrib.auth.models import User
 from django.db import models
 import random
-import time
 from django.utils import timezone
+import logging
+
+from .consumers import GameConsumer
+
+logger = logging.getLogger(__name__)
 
 class Game(models.Model):
     is_active = models.BooleanField(default=False)
@@ -23,23 +29,38 @@ class Game(models.Model):
     def can_start(self):
         return self.players.count() >= 2
 
+    # In the Game model
+
     def start_countdown(self):
-        time.sleep(30)
+        # Sleep for 30 seconds (non-blocking for the rest of the system)
+        time.sleep(30)  # Simulate countdown time
         self.refresh_from_db()
         if not self.is_active:
-
+            # Game is marked as active after the countdown
             self.is_active = True
             self.start_time = timezone.now()
             self.save()
             self.start_ball_drawing()
 
     def start_ball_drawing(self):
+        """Continuously draw balls and notify the WebSocket group."""
         while self.is_active:
             time.sleep(5)
             self.refresh_from_db()
             new_ball = self.draw_ball()
-            print(new_ball)
-            if not new_ball:
+
+            if new_ball:
+                letter = self.get_bingo_letter(new_ball)
+                ball_string = f"{letter}{new_ball}"
+                print(f"Generated ball: {ball_string}")
+
+                # Send the ball to all connected clients
+                asyncio.run(GameConsumer.send_to_all({
+                    'type': 'game.ball',
+                    'message': {'ball': ball_string}
+                }))
+            else:
+                print("No new ball. Ending game.")
                 self.delete()
                 break
 

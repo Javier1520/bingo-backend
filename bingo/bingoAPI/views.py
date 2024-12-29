@@ -54,27 +54,6 @@ class RegisterToGameView(APIView):
             game.delete()
 
 
-class LatestBallView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        game = Game.objects.filter(is_active=True).first()
-        if not game or not game.drawn_balls:
-            return Response({"message": "No balls drawn yet"}, status=status.HTTP_200_OK)
-
-        if game.winner:
-            return Response({
-                "message": "Game finished",
-                "winner": game.winner.username
-            }, status=status.HTTP_200_OK)
-
-        last_ball = game.drawn_balls[-1]
-        letter = game.get_bingo_letter(int(last_ball))
-        formatted_ball = f"{letter}{last_ball}"
-
-        return Response({"latest_ball": formatted_ball}, status=status.HTTP_200_OK)
-
-
 class ClaimWinView(APIView):
     permission_classes = [IsAuthenticated]
 

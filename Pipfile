@@ -10,6 +10,9 @@ python-dotenv = "*"
 psycopg2-binary = "*"
 djoser = "*"
 django-cors-headers = "*"
+channels = "*"
+daphne = "*"
+channels-redis = "*"
 
 [dev-packages]
 
