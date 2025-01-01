@@ -13,6 +13,7 @@ django-cors-headers = "*"
 channels = "*"
 daphne = "*"
 dj-database-url = "*"
+whitenoise = "*"
 
 [dev-packages]
 
