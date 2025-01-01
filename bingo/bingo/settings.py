@@ -29,7 +29,7 @@ SECRET_KEY = os.getenv('SECRET_KEY', default='f(l@_(j*!!&#^s((&q!a3h-3rkyc_ys09d
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DEBUG', default='True') == 'True'
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['.onrender.com']
 
 # Application definition
 
