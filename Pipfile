@@ -12,6 +12,7 @@ djoser = "*"
 django-cors-headers = "*"
 channels = "*"
 daphne = "*"
+dj-database-url = "*"
 
 [dev-packages]
 
