@@ -10,6 +10,7 @@ import threading
 
 class RegisterToGameView(APIView):
     permission_classes = [IsAuthenticated]
+    countdown_lock = threading.Lock()
 
     def post(self, request):
         user = request.user
@@ -21,7 +22,6 @@ class RegisterToGameView(APIView):
         if Player.objects.filter(user=user, game__is_active=True).exists():
             return Response({"error": "User is already registered for an active game"}, status=status.HTTP_400_BAD_REQUEST)
 
-
         card = BingoCard()
         card.generate_unique_card()
 
@@ -30,16 +30,24 @@ class RegisterToGameView(APIView):
             game.players.add(user)
 
             if game.players.count() == 1:
-                threading.Thread(target=self.check_timeout, args=(game,)).start()
+                with self.countdown_lock:
+                    if not getattr(game, "timeout_thread_started", False):  # Check if thread has already started
+                        threading.Thread(target=self.check_timeout, args=(game,)).start()
+                        setattr(game, "timeout_thread_started", True)
 
             if game.can_start() and not game.is_active:
-                threading.Thread(target=game.start_countdown).start()
+                with self.countdown_lock:
+                    if not getattr(game, "countdown_thread_started", False):  # Ensure single countdown thread
+                        threading.Thread(target=game.start_countdown).start()
+                        setattr(game, "countdown_thread_started", True)
 
             return Response({"player": player.user.username, "card": player.bingo_card.numbers}, status=status.HTTP_201_CREATED)
         except IntegrityError:
             return Response(
                 {"error": "User is already registered with a bingo card for this game"},
-                status=status.HTTP_400_BAD_REQUEST)
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
 
     def check_timeout(self, game):
         """Deletes the game if it doesn't reach 2 players within 60 seconds."""
