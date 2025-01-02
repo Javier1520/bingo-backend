@@ -34,6 +34,11 @@ class GameConsumer(AsyncWebsocketConsumer):
             await self.accept()
             print("\n\nWebSocket connection accepted\n\n")
 
+            await self.send_to_all({
+                'type': 'game.total_players',
+                'message': {'total_players': len(self.connected_clients)}
+            })
+
         except Exception as e:
             print(f"\n\nException during connect: {e}\n\n")
             await self.close()
