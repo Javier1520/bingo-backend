@@ -117,3 +117,16 @@ class GetBingoCardView(APIView):
             return Response({"error": "User is not part of an active game"}, status=status.HTTP_400_BAD_REQUEST)
         card = {key: player.bingo_card.numbers[key] for key in ['B', 'I', 'N', 'G', 'O']}
         return Response({"card": card}, status=status.HTTP_200_OK)
+
+'''
+# uncomment this and the loggin in settings.py to enable query logging
+from django.db import connection
+def my_view(request):
+    # Enabling query logging
+    connection.force_debug_cursor = True
+
+    # Your view logic here
+
+    # Disable query logging when done
+    connection.force_debug_cursor = False
+'''
