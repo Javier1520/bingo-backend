@@ -7,10 +7,8 @@ class GameConsumer(AsyncWebsocketConsumer):
 
     async def connect(self):
         try:
-            # Accept the WebSocket connection
             await self.accept()
             print("\n\nWebSocket connection accepted\n\n")
-
             # Wait for the token after the connection is established
             # The token validation logic will be inside the `receive` method
 
@@ -30,46 +28,38 @@ class GameConsumer(AsyncWebsocketConsumer):
             # Token validation
             if not token:
                 print("Token not found in the received data.")
-                await self.close(code=4004)  # Close if no token is provided
-                return  # Early return to avoid calling async functions
-
-            print(f"Received token: {token}")
+                await self.close(code=4004)
+                return
 
             # Authenticate user with the token
-            self.user = await self.authenticate_user(token)  # Use await to call async method
+            self.user = await self.authenticate_user(token)
             if not self.user:
                 print("\n\nUser authentication failed\n\n")
-                await self.close(code=4003)  # Close with authentication error code
-                return  # Early return to avoid further processing
-
+                await self.close(code=4003)
             # Fetch active game
-            self.game = await self.get_active_game()  # Use await to call async method
+            self.game = await self.get_active_game()
             if not self.game:
                 print("\n\nNo active game found\n\n")
                 await self.close()
-                return  # Early return to avoid further processing
+                return
 
-            # Add client to the set of connected clients
             self.connected_clients.add(self)
-
-            # Notify all clients about the total players
             await self.send_to_all({
                 'type': 'game.total_players',
                 'message': {'total_players': len(self.connected_clients)}
             })
 
-            # Handle any other messages (optional)
             message = text_data_json.get('message')
             if message:
                 print(f"Received message: {message}")
 
         except json.JSONDecodeError as e:
             print(f"Error decoding JSON: {e}")
-            await self.close(code=4004)  # Close on error decoding JSON
+            await self.close(code=4004)
 
         except Exception as e:
             print(f"Error processing received message: {e}")
-            await self.close(code=4005)  # Close on general error
+            await self.close(code=4005)
 
 
     async def disconnect(self, close_code):
